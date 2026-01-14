@@ -1,147 +1,41 @@
-const gradingScales = {
-  all_public: {
-    "A+": 4.0,
-    A: 3.75,
-    "A-": 3.5,
-    "B+": 3.25,
-    B: 3.0,
-    "B-": 2.75,
-    "C+": 2.5,
-    C: 2.25,
-    D: 2.0,
-    F: 0.0,
-  },
-  nsu: {
-    A: 4.0,
-    "A-": 3.7,
-    "B+": 3.3,
-    B: 3.0,
-    "B-": 2.7,
-    "C+": 2.3,
-    C: 2.0,
-    "C-": 1.7,
-    "D+": 1.3,
-    D: 1.0,
-    F: 0.0,
-  },
-  iub: {
-    A: 4.0,
-    "A-": 3.7,
-    "B+": 3.3,
-    B: 3.0,
-    "B-": 2.7,
-    "C+": 2.3,
-    C: 2.0,
-    "C-": 1.7,
-    "D+": 1.3,
-    D: 1.0,
-    F: 0.0,
-  },
-  ewu: {
-    "A+": 4.0,
-    A: 4.0,
-    "A-": 3.7,
-    "B+": 3.3,
-    B: 3.0,
-    "B-": 2.7,
-    "C+": 2.3,
-    C: 2.0,
-    "C-": 1.7,
-    "D+": 1.3,
-    D: 1.0,
-    F: 0.0,
-  },
-  brac: {
-    A: 4.0,
-    "A-": 3.7,
-    "B+": 3.3,
-    B: 3.0,
-    "B-": 2.7,
-    "C+": 2.3,
-    C: 2.0,
-    "C-": 1.7,
-    "D+": 1.3,
-    D: 1.0,
-    "D-": 0.7,
-    F: 0.0,
-  },
-  aiub: {
-    "A+": 4.0,
-    A: 3.75,
-    "B+": 3.5,
-    B: 3.25,
-    "C+": 3.0,
-    C: 2.75,
-    "D+": 2.5,
-    D: 2.25,
-    F: 0.0,
-  },
-  uiu: {
-    A: 4.0,
-    "A-": 3.67,
-    "B+": 3.33,
-    B: 3.0,
-    "B-": 2.67,
-    "C+": 2.33,
-    C: 2.0,
-    "C-": 1.67,
-    "D+": 1.33,
-    D: 1.0,
-    F: 0.0,
-  },
-  diu: {
-    "A+": 4.0,
-    A: 3.75,
-    "A-": 3.5,
-    "B+": 3.25,
-    B: 3.0,
-    "B-": 2.75,
-    "C+": 2.5,
-    C: 2.25,
-    D: 2.0,
-    F: 0.0,
-  },
-  aust: {
-    "A+": 4.0,
-    A: 3.75,
-    "A-": 3.5,
-    "B+": 3.25,
-    B: 3.0,
-    "B-": 2.75,
-    "C+": 2.5,
-    C: 2.25,
-    D: 2.0,
-    F: 0.0,
-  },
-  iubat: {
-    A: 4.0,
-    "B+": 3.7,
-    B: 3.4,
-    "B-": 3.1,
-    "C+": 2.8,
-    C: 2.5,
-    "C-": 2.2,
-    "D+": 1.5,
-    D: 1.0,
-    F: 0.0,
-  },
+let gradingScales = {};
+
+// Initialize application and fetch data
+window.onload = async () => {
+  try {
+    const response = await fetch("universities.json");
+    gradingScales = await response.json();
+
+    // Initial setup
+    for (let i = 0; i < 4; i++) addRow();
+    updateUI();
+  } catch (error) {
+    console.error("Error loading grading scales:", error);
+  }
 };
 
 function updateUI() {
-  const uni = document.getElementById("uniSelect").value;
-  const scale = gradingScales[uni];
+  const uniKey = document.getElementById("uniSelect").value;
+  const university = gradingScales[uniKey];
+  if (!university) return;
 
+  const scale = university.scale;
+
+  // Display grade and marks in the sidebar
   document.getElementById("gradeDisplay").innerHTML = Object.entries(scale)
     .map(
-      ([g, p]) => `
-        <div class="flex justify-between p-2 text-sm font-medium border-b border-slate-50 last:border-0">
-            <span class="text-slate-600">${g}</span>
-            <span class="text-teal-600">${p.toFixed(2)}</span>
-        </div>
-    `
+      ([g, info]) => `
+            <div class="flex justify-between p-2 text-sm font-medium border-b border-slate-50 last:border-0">
+                <span class="text-slate-600">${g} <span class="text-[10px] text-slate-400">(${
+        info.marks
+      })</span></span>
+                <span class="text-teal-600">${info.point.toFixed(2)}</span>
+            </div>
+        `
     )
     .join("");
 
+  // Update dropdown options in the table
   const opts = Object.keys(scale)
     .map((g) => `<option value="${g}">${g}</option>`)
     .join("");
@@ -163,7 +57,17 @@ function addRow() {
         <td class="px-6 py-3 text-right"><button onclick="this.closest('tr').remove()" class="text-slate-300 hover:text-red-500">✕</button></td>
     `;
   tbody.appendChild(tr);
-  updateUI();
+
+  // Ensure new row has options if data is already loaded
+  if (Object.keys(gradingScales).length > 0) {
+    const uniKey = document.getElementById("uniSelect").value;
+    const opts = Object.keys(gradingScales[uniKey].scale)
+      .map((g) => `<option value="${g}">${g}</option>`)
+      .join("");
+    tr.querySelectorAll(".grade-sel, .prev-grade-sel").forEach(
+      (s) => (s.innerHTML = opts)
+    );
+  }
 }
 
 function toggleRetake(cb) {
@@ -173,8 +77,8 @@ function toggleRetake(cb) {
 }
 
 function calculate() {
-  const uni = document.getElementById("uniSelect").value;
-  const scale = gradingScales[uni];
+  const uniKey = document.getElementById("uniSelect").value;
+  const scale = gradingScales[uniKey].scale;
   let cCGPA = parseFloat(document.getElementById("currCGPA").value) || 0;
   let cCred = parseFloat(document.getElementById("currCred").value) || 0;
 
@@ -187,14 +91,15 @@ function calculate() {
     const cr = parseFloat(row.querySelector(".c-cred").value) || 0;
     const gr = row.querySelector(".grade-sel").value;
     const retake = row.querySelector('input[type="checkbox"]').checked;
+
     if (cr > 0) {
       sCr += cr;
-      sPts += scale[gr] * cr;
+      sPts += scale[gr].point * cr;
       if (retake) {
         const prev = row.querySelector(".prev-grade-sel").value;
-        totalPts = totalPts - scale[prev] * cr + scale[gr] * cr;
+        totalPts = totalPts - scale[prev].point * cr + scale[gr].point * cr;
       } else {
-        totalPts += scale[gr] * cr;
+        totalPts += scale[gr].point * cr;
         totalCr += cr;
       }
     }
@@ -205,6 +110,10 @@ function calculate() {
   document.getElementById("resCGPA").innerText =
     totalCr > 0 ? (totalPts / totalCr).toFixed(2) : "0.00";
   document.getElementById("resultBox").classList.remove("hidden");
+}
+
+function resetAll() {
+  if (confirm("Clear all data?")) location.reload();
 }
 
 function downloadPDF() {
@@ -220,7 +129,7 @@ function downloadPDF() {
   doc.text("CGPA Progress Report", 14, 20);
   doc.setFontSize(10);
   doc.setTextColor(100);
-  doc.text(`${uni} | Academic Year 2026`, 14, 28);
+  doc.text(`${uni} | Academic Report`, 14, 28);
 
   const tableData = [];
   document.querySelectorAll("#courseTable tr").forEach((row) => {
@@ -258,12 +167,3 @@ function downloadPDF() {
 
   doc.save("Semester_Report.pdf");
 }
-
-function resetAll() {
-  if (confirm("Clear all data?")) location.reload();
-}
-
-// Initialize with 4 empty rows
-window.onload = () => {
-  for (let i = 0; i < 4; i++) addRow();
-};
